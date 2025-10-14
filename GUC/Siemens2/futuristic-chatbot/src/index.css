@@ -1,0 +1,131 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  .glassmorphic {
+    @apply backdrop-blur-glass bg-card border border-border/50 shadow-glass;
+  }
+  
+  .glassmorphic-primary {
+    @apply backdrop-blur-glass bg-primary/20 border border-primary/30 shadow-glass;
+  }
+  
+  .gradient-text {
+    @apply bg-primary-gradient bg-clip-text text-transparent;
+  }
+  
+  .neon-glow {
+    @apply shadow-neon;
+  }
+  
+  .neon-glow-hover:hover {
+    @apply shadow-neon;
+  }
+  
+  .floating-orb {
+    @apply absolute w-24 h-24 rounded-full blur-[120px] opacity-60;
+  }
+  
+  .floating-orb-purple {
+    @apply floating-orb bg-primary animate-float;
+  }
+  
+  .floating-orb-cyan {
+    @apply floating-orb bg-secondary animate-float-delayed;
+  }
+  
+  .chat-bubble {
+    @apply glassmorphic rounded-modern px-6 py-4 max-w-[80%] animate-fade-in;
+  }
+  
+  .chat-bubble-user {
+    @apply glassmorphic-primary rounded-modern px-6 py-4 max-w-[80%] animate-fade-in;
+  }
+  
+  .avatar {
+    @apply w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold;
+  }
+  
+  .avatar-bot {
+    @apply avatar bg-primary-gradient shadow-neon;
+  }
+  
+  .avatar-user {
+    @apply avatar bg-gradient-to-br from-secondary to-accent;
+  }
+  
+  .typing-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+  
+  .typing-dot-1 {
+    @apply typing-dot bg-primary animate-bounce-dot-1;
+  }
+  
+  .typing-dot-2 {
+    @apply typing-dot bg-secondary animate-bounce-dot-2;
+  }
+  
+  .typing-dot-3 {
+    @apply typing-dot bg-accent animate-bounce-dot-3;
+  }
+  
+  .input-area {
+    @apply glassmorphic border-t border-border/50 p-4;
+  }
+  
+  .message-input {
+    @apply w-full bg-background/50 backdrop-blur-sm border border-border/50 rounded-modern px-4 py-3 text-foreground placeholder:text-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 resize-none;
+  }
+  
+  .send-button {
+    @apply bg-primary-gradient text-white px-6 py-3 rounded-modern font-semibold transition-all duration-300 hover:shadow-neon hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none;
+  }
+  
+  .header {
+    @apply sticky top-0 glassmorphic border-b border-border/50 z-10;
+  }
+  
+  .sparkles-icon {
+    @apply w-8 h-8 text-primary animate-glow-pulse;
+  }
+  
+  .title-gradient {
+    @apply text-3xl font-bold gradient-text;
+  }
+  
+  .subtitle {
+    @apply text-foreground/70 text-sm;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .text-shadow-neon {
+    text-shadow: 0 0 10px hsl(280 100% 70% / 0.5);
+  }
+}
