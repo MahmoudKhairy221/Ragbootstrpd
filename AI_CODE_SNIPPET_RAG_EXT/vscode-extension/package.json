@@ -1,0 +1,93 @@
+{
+  "name": "ai-code-snippet-rag",
+  "displayName": "AI Code Snippet RAG",
+  "description": "AI Code Snippet RAG - VS Code extension for code queries",
+  "version": "1.0.0",
+  "publisher": "AIcodesnippetrag",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/ai-code-snippet-rag.git"
+  },
+  "keywords": [
+    "ai",
+    "rag",
+    "code-search",
+    "codebase",
+    "query",
+    "chat",
+    "assistant",
+    "code-analysis",
+    "semantic-search"
+  ],
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "aiCodeSnippetRag.openChat",
+        "title": "Open AI Code Snippet RAG Chat"
+      },
+      {
+        "command": "aiCodeSnippetRag.testConnection",
+        "title": "AI Code Snippet RAG: Test Connection"
+      },
+      {
+        "command": "aiCodeSnippetRag.rebuildAnalysis",
+        "title": "AI Code Snippet RAG: Rebuild Analysis"
+      }
+    ],
+    "chatParticipants": [
+      {
+        "id": "aiCodeSnippetRag.ask",
+        "name": "AskAICodeSnippetRAG",
+        "description": "Ask questions about your codebase"
+      }
+    ],
+    "configuration": {
+      "title": "AI Code Snippet RAG",
+      "properties": {
+        "aiCodeSnippetRag.serverUrl": {
+          "type": "string",
+          "default": "http://localhost:8000",
+          "description": "Backend server URL"
+        },
+        "aiCodeSnippetRag.requestTimeoutMs": {
+          "type": "number",
+          "default": 20000,
+          "description": "Request timeout in milliseconds"
+        },
+        "aiCodeSnippetRag.maxFiles": {
+          "type": "number",
+          "default": 5000,
+          "description": "Maximum number of files to analyze"
+        },
+        "aiCodeSnippetRag.maxBytesPerFile": {
+          "type": "number",
+          "default": 40000,
+          "description": "Maximum bytes to read per file for sampling"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}
+
+
