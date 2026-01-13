@@ -37,6 +37,15 @@
         "title": "Open AI Code Snippet RAG Chat"
       },
       {
+        "command": "aiCodeSnippetRag.openSidebar",
+        "title": "Open AI Code Snippet RAG Sidebar",
+        "icon": "$(comment-discussion)"
+      },
+      {
+        "command": "aiCodeSnippetRag.focusSidebar",
+        "title": "Focus AI Code Snippet RAG Sidebar"
+      },
+      {
         "command": "aiCodeSnippetRag.testConnection",
         "title": "AI Code Snippet RAG: Test Connection"
       },
@@ -52,6 +61,24 @@
         "description": "Ask questions about your codebase"
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "aiCodeSnippetRag",
+          "title": "AI Code Snippet RAG",
+          "icon": "$(comment-discussion)"
+        }
+      ]
+    },
+    "views": {
+      "aiCodeSnippetRag": [
+        {
+          "id": "aiCodeSnippetRag.sidebar",
+          "name": "Chat",
+          "type": "webview"
+        }
+      ]
+    },
     "configuration": {
       "title": "AI Code Snippet RAG",
       "properties": {
@@ -74,6 +101,11 @@
           "type": "number",
           "default": 40000,
           "description": "Maximum bytes to read per file for sampling"
+        },
+        "aiCodeSnippetRag.useHardcodedResponse": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use hardcoded responses based on workspace analysis (for testing without backend)"
         }
       }
     }

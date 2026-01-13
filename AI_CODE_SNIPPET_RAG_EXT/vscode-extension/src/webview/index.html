@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${cspSource} 'unsafe-inline'; script-src ${cspSource} 'unsafe-inline';">
+    <title>AI Code Snippet RAG</title>
+    <link rel="stylesheet" href="${styleUri}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h2>AI Code Snippet RAG</h2>
+            <div class="status-indicator" id="statusIndicator">
+                <span class="status-dot" id="statusDot"></span>
+                <span class="status-text" id="statusText">Checking...</span>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <button class="action-btn" id="testConnectionBtn" title="Test Connection">
+                <span class="icon">🔌</span>
+                <span>Test</span>
+            </button>
+            <button class="action-btn" id="rebuildBtn" title="Rebuild Analysis">
+                <span class="icon">🔄</span>
+                <span>Rebuild</span>
+            </button>
+            <button class="action-btn" id="settingsBtn" title="Settings">
+                <span class="icon">⚙️</span>
+                <span>Settings</span>
+            </button>
+        </div>
+
+        <!-- Settings Panel -->
+        <div class="settings-panel" id="settingsPanel" style="display: none;">
+            <h3>Settings</h3>
+            <div class="setting-item">
+                <label for="serverUrl">Server URL:</label>
+                <input type="text" id="serverUrl" placeholder="http://localhost:8000">
+            </div>
+            <div class="setting-item">
+                <label for="requestTimeout">Request Timeout (ms):</label>
+                <input type="number" id="requestTimeout" placeholder="20000">
+            </div>
+            <div class="setting-item">
+                <label for="maxFiles">Max Files:</label>
+                <input type="number" id="maxFiles" placeholder="5000">
+            </div>
+            <div class="setting-item">
+                <label for="maxBytesPerFile">Max Bytes Per File:</label>
+                <input type="number" id="maxBytesPerFile" placeholder="40000">
+            </div>
+            <div class="setting-actions">
+                <button class="btn-primary" id="saveSettingsBtn">Save</button>
+                <button class="btn-secondary" id="cancelSettingsBtn">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Chat Messages -->
+        <div class="chat-container" id="chatContainer">
+            <div class="chat-messages" id="chatMessages">
+                <div class="welcome-message">
+                    <h3>Welcome to AI Code Snippet RAG</h3>
+                    <p>Ask questions about your codebase to get intelligent answers with code snippets.</p>
+                    <p>Make sure your backend is running and connected.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-container">
+            <div class="input-wrapper">
+                <textarea 
+                    id="queryInput" 
+                    placeholder="Ask a question about your codebase..."
+                    rows="2"
+                ></textarea>
+                <button class="send-btn" id="sendBtn" title="Send">
+                    <span>Send</span>
+                </button>
+            </div>
+            <div class="input-footer">
+                <span class="hint">Press Enter to send, Shift+Enter for new line</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="${scriptUri}"></script>
+</body>
+</html>

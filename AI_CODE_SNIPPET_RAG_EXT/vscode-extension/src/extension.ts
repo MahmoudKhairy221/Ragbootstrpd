@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as crypto from 'crypto';
 import * as path from 'path';
+import { WebviewProvider } from './webviewProvider';
 
 // Types
 interface FileInfo {
@@ -165,7 +166,7 @@ function computeFingerprint(files: FileInfo[]): string {
 }
 
 // Analyze workspace
-async function analyzeWorkspace(): Promise<WorkspaceAnalysis | null> {
+export async function analyzeWorkspace(): Promise<WorkspaceAnalysis | null> {
 	const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
 	if (!workspaceFolder) {
 		outputChannel.appendLine('No workspace folder found');
@@ -262,7 +263,7 @@ async function analyzeWorkspace(): Promise<WorkspaceAnalysis | null> {
 }
 
 // Test backend connection
-async function testConnection(): Promise<boolean> {
+export async function testConnection(): Promise<boolean> {
 	const config = vscode.workspace.getConfiguration('aiCodeSnippetRag');
 	const serverUrl = config.get<string>('serverUrl', 'http://localhost:8000');
 	const timeoutMs = config.get<number>('requestTimeoutMs', 20000);
@@ -304,9 +305,132 @@ async function testConnection(): Promise<boolean> {
 	}
 }
 
+// Generate hardcoded response based on workspace analysis
+function generateHardcodedResponse(query: string, analysis: WorkspaceAnalysis, activeFile: string | null): QueryResponse {
+	const answers: QueryAnswer[] = [];
+	
+	// Analyze workspace statistics
+	const fileTypes = new Map<string, number>();
+	const languages = new Set<string>();
+	let totalLines = 0;
+	let totalBytes = 0;
+	const filesWithSamples = analysis.files.filter(f => f.sample);
+	
+	analysis.files.forEach(file => {
+		const ext = path.extname(file.path).toLowerCase();
+		fileTypes.set(ext, (fileTypes.get(ext) || 0) + 1);
+		if (file.languageId) {
+			languages.add(file.languageId);
+		}
+		totalBytes += file.size;
+		if (file.sample) {
+			totalLines += file.sample.split('\n').length;
+		}
+	});
+	
+	const topFileTypes = Array.from(fileTypes.entries())
+		.sort((a, b) => b[1] - a[1])
+		.slice(0, 10)
+		.map(([ext, count]) => `  ${ext || '(no extension)'}: ${count} files`);
+	
+	// Calculate average file size
+	const avgFileSize = analysis.fileCount > 0 ? Math.round(totalBytes / analysis.fileCount) : 0;
+	const avgFileSizeKB = (avgFileSize / 1024).toFixed(2);
+	const totalSizeMB = (totalBytes / (1024 * 1024)).toFixed(2);
+	
+	// Get top-level directories
+	const dirs = new Set<string>();
+	analysis.files.forEach(file => {
+		const dir = path.dirname(file.path);
+		if (dir !== '.' && dir !== file.path) {
+			const topDir = dir.split(path.sep)[0];
+			if (topDir) {
+				dirs.add(topDir);
+			}
+		}
+	});
+	
+	// Always include comprehensive workspace summary as first answer
+	const summaryCode = `📊 WORKSPACE SUMMARY
+
+📁 Workspace Name: ${analysis.workspaceName}
+📂 Workspace Root: ${analysis.workspaceRoot}
+🔑 Fingerprint: ${analysis.fingerprint.substring(0, 16)}...
+
+📈 STATISTICS:
+  • Total Files: ${analysis.fileCount}
+  • Files with Code Samples: ${filesWithSamples.length}
+  • Total Lines of Code: ${totalLines.toLocaleString()}
+  • Total Size: ${totalSizeMB} MB
+  • Average File Size: ${avgFileSizeKB} KB
+
+📝 FILE TYPES:
+${topFileTypes.join('\n')}
+
+💻 PROGRAMMING LANGUAGES:
+  ${Array.from(languages).length > 0 ? Array.from(languages).join(', ') : 'None detected'}
+
+📂 TOP-LEVEL DIRECTORIES:
+  ${Array.from(dirs).slice(0, 15).join(', ') || 'Root level'}
+  ${dirs.size > 15 ? `... and ${dirs.size - 15} more` : ''}
+
+✅ Analysis Status: Complete
+📅 Analyzed: ${new Date().toLocaleString()}`;
+	
+	answers.push({
+		file: 'Workspace Summary',
+		start_line: 1,
+		end_line: 30,
+		code: summaryCode,
+		score: 1.0,
+		explanation: `Comprehensive workspace analysis complete. Found ${analysis.fileCount} files with ${totalLines.toLocaleString()} lines of code across ${languages.size} programming languages.`
+	});
+	
+	// Find relevant files based on query if query is specific
+	const queryLower = query.toLowerCase();
+	if (queryLower && queryLower.length > 2 && !queryLower.includes('summary') && !queryLower.includes('workspace')) {
+		const relevantFiles = analysis.files
+			.filter(file => {
+				const fileName = path.basename(file.path).toLowerCase();
+				const filePath = file.path.toLowerCase();
+				return fileName.includes(queryLower) || 
+					   filePath.includes(queryLower) ||
+					   (file.sample && file.sample.toLowerCase().includes(queryLower));
+			})
+			.slice(0, 3);
+		
+		relevantFiles.forEach((file, index) => {
+			if (file.sample) {
+				const lines = file.sample.split('\n');
+				const sampleLines = lines.slice(0, 30).join('\n');
+				answers.push({
+					file: file.path,
+					start_line: 1,
+					end_line: Math.min(30, lines.length),
+					code: sampleLines,
+					score: 0.85 - (index * 0.1),
+					explanation: `Found relevant code in ${file.path} (${file.size} bytes, ${lines.length} lines) based on your query.`
+				});
+			}
+		});
+	}
+	
+	return { answers };
+}
+
 // Send query to backend
-async function sendQuery(query: string, analysis: WorkspaceAnalysis, activeFile: string | null, selection: { startLine: number; endLine: number } | null): Promise<QueryResponse | null> {
+export async function sendQuery(query: string, analysis: WorkspaceAnalysis, activeFile: string | null, selection: { startLine: number; endLine: number } | null): Promise<QueryResponse | null> {
 	const config = vscode.workspace.getConfiguration('aiCodeSnippetRag');
+	const useHardcoded = config.get<boolean>('useHardcodedResponse', false);
+	
+	// Use hardcoded response if enabled
+	if (useHardcoded) {
+		outputChannel.appendLine('Using hardcoded response mode');
+		const hardcodedResponse = generateHardcodedResponse(query, analysis, activeFile);
+		outputChannel.appendLine(`Generated ${hardcodedResponse.answers.length} hardcoded answers`);
+		return hardcodedResponse;
+	}
+	
 	const serverUrl = config.get<string>('serverUrl', 'http://localhost:8000');
 	const timeoutMs = config.get<number>('requestTimeoutMs', 20000);
 
@@ -373,7 +497,7 @@ async function sendQuery(query: string, analysis: WorkspaceAnalysis, activeFile:
 }
 
 // Render query response as markdown
-function renderResponse(response: QueryResponse): string {
+export function renderResponse(response: QueryResponse): string {
 	if (!response.answers || response.answers.length === 0) {
 		return 'No results found.';
 	}
@@ -393,7 +517,7 @@ function renderResponse(response: QueryResponse): string {
 }
 
 // Get active editor context
-function getActiveEditorContext(): { file: string | null; selection: { startLine: number; endLine: number } | null } {
+export function getActiveEditorContext(): { file: string | null; selection: { startLine: number; endLine: number } | null } {
 	const editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		return { file: null, selection: null };
@@ -481,33 +605,12 @@ async function handleChatRequest(request: vscode.ChatRequest, context: vscode.Ch
 
 // Commands
 async function openChat() {
-	outputChannel.appendLine('Opening chat...');
-	
-	// Check if participant is registered
-	outputChannel.appendLine('Checking chat participant registration...');
-	
-	// Open the chat panel
-	await vscode.commands.executeCommand('workbench.action.chat.open');
-	
-	// Show detailed instructions
-	setTimeout(() => {
-		const message = `To use AI Code Snippet RAG:
-1. Look at the TOP of the chat panel (above the input field)
-2. You should see a dropdown/selector showing the current chat participant
-3. Click on it to see available participants
-4. Select "AskAICodeSnippetRAG" from the list
-
-If you don't see the dropdown, check the Output panel (View → Output → "AI Code Snippet RAG") for registration status.`;
-		
-		vscode.window.showInformationMessage(message, 'View Output Panel').then(selection => {
-			if (selection === 'View Output Panel') {
-				vscode.commands.executeCommand('workbench.action.output.toggleOutput');
-			}
-		});
-	}, 300);
+	outputChannel.appendLine('Opening sidebar...');
+	// Open the sidebar instead of VS Code chat
+	await vscode.commands.executeCommand('workbench.view.extension.aiCodeSnippetRag');
 }
 
-async function rebuildAnalysis() {
+export async function rebuildAnalysis() {
 	const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
 	if (!workspaceFolder) {
 		vscode.window.showWarningMessage('No workspace folder found');
@@ -552,9 +655,25 @@ export function activate(context: vscode.ExtensionContext) {
 		console.error('Failed to register chat participant:', error);
 	}
 
+	// Register webview provider
+	const webviewProvider = WebviewProvider.createOrShow(context);
+	context.subscriptions.push(
+		vscode.window.registerWebviewViewProvider('aiCodeSnippetRag.sidebar', webviewProvider, {
+			webviewOptions: {
+				retainContextWhenHidden: true
+			}
+		})
+	);
+
 	// Register commands
 	context.subscriptions.push(
 		vscode.commands.registerCommand('aiCodeSnippetRag.openChat', openChat),
+		vscode.commands.registerCommand('aiCodeSnippetRag.openSidebar', () => {
+			vscode.commands.executeCommand('workbench.view.extension.aiCodeSnippetRag');
+		}),
+		vscode.commands.registerCommand('aiCodeSnippetRag.focusSidebar', () => {
+			vscode.commands.executeCommand('workbench.view.extension.aiCodeSnippetRag');
+		}),
 		vscode.commands.registerCommand('aiCodeSnippetRag.testConnection', testConnection),
 		vscode.commands.registerCommand('aiCodeSnippetRag.rebuildAnalysis', rebuildAnalysis)
 	);
